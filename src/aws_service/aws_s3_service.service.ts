@@ -19,7 +19,6 @@ export class AwsS3Service {
     secretAccessKey: this.awsConfig.awsS3SecretKey,
     region: this.awsConfig.awsS3Region,
   });
-
   constructor(
     private readonly awsConfig : AwsConfig
   ){}

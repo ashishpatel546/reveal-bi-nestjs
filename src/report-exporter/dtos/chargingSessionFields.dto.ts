@@ -37,7 +37,4 @@ export class ChargingSessionFieldsDto {
   @IsString({ each: true }) // Validate that each item in the array is a string
   asset_id: string[];
 
-  @IsOptional()
-  @IsNumber()
-  limit: number;
 }

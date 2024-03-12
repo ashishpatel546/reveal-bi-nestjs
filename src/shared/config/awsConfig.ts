@@ -45,7 +45,7 @@ export class AwsConfig {
   }
 
   get awsS3SecretKey() {
-    return this.getString('DB_PASSWORD_REDSHIFT');
+    return this.getString('AWS_S3_KEY_SECRET');
   }
 
   get awsS3Bucket() {

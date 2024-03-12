@@ -9,6 +9,8 @@ import { DbConfig } from './shared/config/dbConfig';
 import { RevealBiModule } from './reveal-bi/reveal-bi.module';
 import { RevealBiController } from './reveal-bi/reveal-bi.controller';
 import { ReportExporterModule } from './report-exporter/report-exporter.module';
+import { CsvWrapperModule } from './csvwrapper/csvwrapper.module';
+import { AwsServiceModule } from './aws_service/aws_service.module';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { ReportExporterModule } from './report-exporter/report-exporter.module';
     }),
     RevealBiModule,
     ReportExporterModule,
+    CsvWrapperModule,
+    AwsServiceModule
   ],
   controllers: [AppController],
   providers: [AppService],
