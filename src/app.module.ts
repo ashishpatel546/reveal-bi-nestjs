@@ -11,6 +11,7 @@ import { RevealBiController } from './reveal-bi/reveal-bi.controller';
 import { ReportExporterModule } from './report-exporter/report-exporter.module';
 import { CsvWrapperModule } from './csvwrapper/csvwrapper.module';
 import { AwsServiceModule } from './aws_service/aws_service.module';
+import { DataExporterModule } from './data-exporter/charging-session-data-exporter.module';
 
 @Module({
   imports: [
@@ -39,7 +40,8 @@ import { AwsServiceModule } from './aws_service/aws_service.module';
     RevealBiModule,
     ReportExporterModule,
     CsvWrapperModule,
-    AwsServiceModule
+    AwsServiceModule,
+    DataExporterModule
   ],
   controllers: [AppController],
   providers: [AppService],

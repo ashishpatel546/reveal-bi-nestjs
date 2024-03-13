@@ -13,34 +13,20 @@ import {
 import moment from 'moment';
 import { CsvWrapperService } from 'src/csvwrapper/csvwrapper.service';
 import { AwsS3Service } from 'src/aws_service/aws_s3_service.service';
+import { ApiConfigService } from 'src/shared/config/config.service';
 
 @Injectable()
 export class ChargingSessionReportExporterService {
   private logger = new Logger(ChargingSessionReportExporterService.name);
-  private limit = 100000;
+  private limit = this.apiConfig.dataFetchLimit;
 
   constructor(
     @InjectDataSource('Redshift') private readonly redshift: DataSource,
     private readonly csvWrapper: CsvWrapperService,
     private readonly awsS3: AwsS3Service,
+    private readonly apiConfig: ApiConfigService
   ) {}
 
-  async getCsvStream(table_name: string, limit: number = 500000) {
-    try {
-      return this.redshift
-        .createQueryBuilder()
-        .select()
-        .from('charging_session', 'cs')
-        .limit(limit)
-        .stream();
-    } catch (error) {
-      this.logger.error(error.message);
-      this.logger.error('can not fetch data from redshift');
-      throw new InternalServerErrorException(
-        'Something Went wrong while streaming the data',
-      );
-    }
-  }
 
   private async mapRawTodata(dataArray: object[]) {
     const mappedData: unknown[] = [];
@@ -97,6 +83,7 @@ export class ChargingSessionReportExporterService {
     return reportArray;
   }
 
+  //todo need to work on it
   private emptyReportDataHandler(uploadPath: string) {
     this.logger.log(`There is no data for upload.`);
     return;

@@ -102,6 +102,14 @@ class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   AWS_CORS_ALLOWED_METHODS: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DATA_FETCH_LIMIT: string;
+
+  @IsString()
+  @IsNotEmpty()
+  MAX_PAGE_SIZE: string;
 }
 
 export function validate(config: Record<string, unknown>) {
