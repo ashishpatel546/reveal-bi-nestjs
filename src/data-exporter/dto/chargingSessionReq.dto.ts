@@ -6,7 +6,6 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  ValidateNested,
 } from 'class-validator';
 
 // DTO for the filters object
@@ -46,8 +45,8 @@ export class ChargingSessionRequestDto {
   filters: Filters;
 
   @IsOptional()
-//   @ValidateNested({ each: true })
-//   @Type(() => RequestedFields)
+  //   @ValidateNested({ each: true })
+  //   @Type(() => RequestedFields)
   requestedFields?: string[];
 
   @IsNotEmpty()
@@ -58,7 +57,6 @@ export class ChargingSessionRequestDto {
   @Transform(({ value }) => new Date(value))
   to: Date;
 
-  
   @IsNumber()
   @IsNotEmpty()
   page_size: number;

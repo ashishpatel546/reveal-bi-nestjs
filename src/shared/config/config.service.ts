@@ -79,9 +79,15 @@ export class ApiConfigService {
     return this.getNumber('THROTTLE_LIMIT');
   }
 
+  get getFromEmail(): string {
+    return this.getString('FROM_EMAIL_ID');
+  }
+
+
   get appConfig(): { port: number } {
     return {
       port: this.getNumber('SERVICE_PORT'),
     };
   }
+
 }

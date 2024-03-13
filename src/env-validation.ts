@@ -8,6 +8,7 @@ import {
   IsDate,
   IsNotEmpty,
   IsNumber,
+  IsEmail,
 } from 'class-validator';
 
 enum Environment {
@@ -110,6 +111,22 @@ class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   MAX_PAGE_SIZE: string;
+
+  @IsString()
+  @IsNotEmpty()
+  MAIL_HOST: string;
+
+  @IsString()
+  @IsNotEmpty()
+  MAIL_USER: string;
+
+  @IsString()
+  @IsNotEmpty()
+  MAIL_PASSWORD: string;
+
+  @IsNotEmpty()
+  @IsEmail()
+  FROM_EMAIL_ID: string;
 }
 
 export function validate(config: Record<string, unknown>) {

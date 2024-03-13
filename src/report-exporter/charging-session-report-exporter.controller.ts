@@ -24,15 +24,19 @@ export class ChargingSessionReportExporterController {
 
   //API route for download link
 
-  @ApiResponse({ status: 200, description: 'Request Successfull', type: [ReportExporterResponse] })
+  @ApiResponse({
+    status: 200,
+    description: 'Request Successfull',
+    type: [ReportExporterResponse],
+  })
   @ApiBody({
     description: 'Put all filters as api body',
     type: ChargingSessionFieldsDto,
   })
   @Post('/get-link')
-  getReportLink(@Body() filters: ChargingSessionFieldsDto) {
-    const {from, to} = filters
-    const [fromDate, toDate] = dateValidation(from, to)
+  getReportLink(@Body() reqBody: ChargingSessionFieldsDto) {
+    const { from, to, filters } = reqBody;
+    const [fromDate, toDate] = dateValidation(from, to);
     const maxDate = moment(fromDate).add(12, 'M');
     if (moment(fromDate).isAfter(maxDate)) {
       throw new BadRequestException(
@@ -40,5 +44,18 @@ export class ChargingSessionReportExporterController {
       );
     }
     return this.service.getCsvReportLink(fromDate, toDate, filters);
+  }
+
+  @Post('/get-report-on-email')
+  getReportViaEmail(@Body() reqBody: ChargingSessionFieldsDto) {
+    const { from, to, filters, email } = reqBody;
+    const [fromDate, toDate] = dateValidation(from, to);
+    const maxDate = moment(fromDate).add(12, 'M');
+    if (moment(fromDate).isAfter(maxDate)) {
+      throw new BadRequestException(
+        'Can generate report for max of 12 months of duration.',
+      );
+    }
+    return this.service.getCsvReportOnEmail(fromDate, toDate,email, filters);
   }
 }

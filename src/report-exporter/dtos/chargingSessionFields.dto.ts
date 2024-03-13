@@ -1,20 +1,14 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   IsArray,
+  IsEmail,
   IsNotEmpty,
   IsOptional,
   IsString,
 } from 'class-validator';
 
-export class ChargingSessionFieldsDto {
-  @IsNotEmpty()
-  @Transform(({ value }) => new Date(value))
-  from: Date;
-
-  @IsNotEmpty()
-  @Transform(({ value }) => new Date(value))
-  to: Date;
-
+export class Filters {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -64,5 +58,21 @@ export class ChargingSessionFieldsDto {
   @IsArray()
   @IsString({ each: true })
   state: string[];
+}
 
+export class ChargingSessionFieldsDto {
+  @IsNotEmpty()
+  @Transform(({ value }) => new Date(value))
+  from: Date;
+
+  @IsNotEmpty()
+  @Transform(({ value }) => new Date(value))
+  to: Date;
+
+  @IsNotEmpty()
+  @IsEmail()
+  email: string;
+
+  @IsNotEmpty()
+  filters: Filters;
 }
