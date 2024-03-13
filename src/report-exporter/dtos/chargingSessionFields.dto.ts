@@ -37,4 +37,24 @@ export class ChargingSessionFieldsDto {
   @IsString({ each: true }) // Validate that each item in the array is a string
   asset_id: string[];
 
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true }) // Validate that each item in the array is a string
+  country_code: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true }) // Validate that each item in the array is a string
+  currency: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true }) // Validate that each item in the array is a string
+  source: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true }) // Validate that each item in the array is a string
+  user_membership_plan: string[];
+
 }

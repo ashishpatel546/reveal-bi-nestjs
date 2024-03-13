@@ -58,7 +58,7 @@ export class ChargingSessionReportExporterController {
   getReportLink(@Body() filters: ChargingSessionFieldsDto) {
     const {from, to} = filters
     const [fromDate, toDate] = dateValidation(from, to)
-    const maxDate = moment(fromDate).add(12, 'M');
+    const maxDate = moment(fromDate).add(4, 'M');
     if (moment(fromDate).isAfter(maxDate)) {
       throw new BadRequestException(
         'Can generate report for max of 12 months of duration.',

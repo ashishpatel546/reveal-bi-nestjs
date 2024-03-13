@@ -1,5 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { randomBytes } from 'crypto';
+import { stringify } from 'csv-stringify';
+import { Readable } from 'stream';
 export async function findFromCache<T>(
   id: string,
   map: Map<string, T>,
@@ -113,4 +115,55 @@ export function getDistinctIdsWithCondition<T, U extends keyof T>(
   }
 
   return distinctIds;
+}
+
+export function arrayToCsv(data: unknown[]): string {
+  if (!data || data?.length === 0) return null;
+
+  const chunkSize = 100000;
+  const headers = Object.keys(data[0]).join(',');
+
+  let csv = headers + '\n';
+
+  for (let i = 0; i < data.length; i += chunkSize) {
+    const chunk = data.slice(i, i + chunkSize);
+    const rows = chunk.map((obj) => Object.values(obj).join(',')).join('\n');
+    csv += rows;
+  }
+  return csv;
+}
+
+
+export async function  createCsvString(
+  data: any[],
+  includeHeader: boolean
+): Promise<string> {
+  // Replace null values with empty strings
+  const dataWithEmptyStrings = data.map(obj => {
+    const newObj = {};
+    for (const key in obj) {
+      newObj[key] = obj[key] !== null || obj[key]?.length !==0 ? obj[key] : ' ';
+    }
+    return newObj;
+  });
+
+  this.logger.log(`Modified the data for empty string.`)
+    this.logger.log(`Data length to convert to csv is now: ${dataWithEmptyStrings?.length ?? 0}`)
+  
+    return new Promise<string>((resolve, reject) => {
+      stringify(dataWithEmptyStrings, { header: includeHeader , quoted_empty: true}, (err, csvString) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(csvString);
+        }
+      });
+    });
+}
+
+export function processStringToCleanString(inputString: string){
+  const regex = /[\r\n\t\f\v!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/g;
+  // Replace all occurrences of the matched characters with empty spaces
+  const cleanedString = inputString.replace(regex, ' ');
+  return cleanedString;
 }

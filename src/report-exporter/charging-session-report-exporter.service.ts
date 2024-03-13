@@ -6,7 +6,10 @@ import {
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { ChargingSessionFieldsDto } from './dtos/chargingSessionFields.dto';
-import { idArrayToString } from 'src/utilities/sharedMethods';
+import {
+  idArrayToString,
+  processStringToCleanString,
+} from 'src/utilities/sharedMethods';
 import moment from 'moment';
 import { CsvWrapperService } from 'src/csvwrapper/csvwrapper.service';
 import { AwsS3Service } from 'src/aws_service/aws_s3_service.service';
@@ -14,7 +17,7 @@ import { AwsS3Service } from 'src/aws_service/aws_s3_service.service';
 @Injectable()
 export class ChargingSessionReportExporterService {
   private logger = new Logger(ChargingSessionReportExporterService.name);
-  private limit = 50000;
+  private limit = 100000;
 
   constructor(
     @InjectDataSource('Redshift') private readonly redshift: DataSource,
@@ -41,8 +44,7 @@ export class ChargingSessionReportExporterService {
 
   private async mapRawTodata(dataArray: object[]) {
     const mappedData: unknown[] = [];
-    if(!dataArray || dataArray.length===0)
-    return mappedData;
+    if (!dataArray || dataArray.length === 0) return mappedData;
     for (const data of dataArray) {
       const record = {
         ...data,
@@ -65,10 +67,12 @@ export class ChargingSessionReportExporterService {
         ),
         charge_end: moment(data['charge_end']).format(`YYYY-DD-MM HH:mm:ss`),
         post_date: moment(data['post_date']).format(`YYYY-DD-MM HH:mm:ss`),
+        address_line1: processStringToCleanString(data['address_line1']),
+        address_line2: processStringToCleanString(data['address_line2']),
       };
-      mappedData.push(record)
+      mappedData.push(record);
     }
-    return mappedData
+    return mappedData;
   }
 
   private async generateReportData(query: string) {
@@ -81,7 +85,7 @@ export class ChargingSessionReportExporterService {
       try {
         const data: object[] = await this.redshift.query(customQuery);
         if (!data || data?.length === 0) break;
-        const mappedData = await this.mapRawTodata(data)
+        const mappedData = await this.mapRawTodata(data);
         reportArray.push(...mappedData);
       } catch (error) {
         this.logger.error('Unable to fetch data from server');
@@ -104,13 +108,25 @@ export class ChargingSessionReportExporterService {
       this.emptyReportDataHandler(uploadPath);
       return;
     }
-    const csvBuffer = this.csvWrapper.jsonToCsvBuffer(report);
+    this.logger.log(`No of records for the file is: ${report?.length ?? 0}`);
+
     this.logger.log(
       `Uploading!!! Report for to S3, path/file_name: ${uploadPath}`,
     );
-    await this.awsS3.uploadfileInCsv(uploadPath, csvBuffer);
+    
+    //handle small files as multipart has limit of min 5mb file
+    if(report?.length < 10000){
+      this.logger.log('Handling small files for approx size less than 5mb')
+      const csv = this.csvWrapper.jsonToCsvBuffer(report)
+      await this.awsS3.uploadfileInCsv(uploadPath, csv);
+    }else{
+      this.logger.log('Handling small files for approx size greater than 5mb')
+      await this.awsS3.uploadCsvToS3InChunks(uploadPath, report);
+    }
+    
     this.logger.log('!!!Uploading finished....');
     this.logger.log(`File is available on s3 via link provided...`);
+    report.length = 0;
     return;
   }
 
@@ -137,6 +153,7 @@ export class ChargingSessionReportExporterService {
       const appendQuery = ` and ${key} in (${keyString})`;
       query += appendQuery;
     }
+    query = query + ` order by post_date `;
     this.logger.log(`[GENERIC QUERY: ] ${query}`);
     return query;
   }
