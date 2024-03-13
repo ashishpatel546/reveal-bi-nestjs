@@ -1,9 +1,7 @@
 import { Transform } from 'class-transformer';
 import {
   IsArray,
-  IsDate,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -56,5 +54,15 @@ export class ChargingSessionFieldsDto {
   @IsArray()
   @IsString({ each: true }) // Validate that each item in the array is a string
   user_membership_plan: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  country_name: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  state: string[];
 
 }

@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDate,
@@ -30,38 +30,17 @@ export class Filters {
   @IsArray()
   @IsString({ each: true })
   asset_id: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  country_name: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  state: string[];
 }
-
-// DTO for the requested fields object
-// export class RequestedFields {
-//   @IsOptional()
-//   @IsDate()
-//   post_date?: string;
-
-//   @IsOptional()
-//   @IsString()
-//   host_name?: string;
-
-//   @IsOptional()
-//   @IsString()
-//   serial_number?: string;
-
-//   @IsOptional()
-//   @IsString()
-//   location_name?: string;
-
-//   @IsOptional()
-//   @IsString()
-//   asset_id?: string;
-
-//   @IsOptional()
-//   @IsString()
-//   total_fee?: string;
-
-//   // Add more fields as needed
-// }
-
-// Main DTO combining both filters and requested fields
 export class ChargingSessionRequestDto {
   @IsNotEmpty()
   filters: Filters;
@@ -72,11 +51,11 @@ export class ChargingSessionRequestDto {
   requestedFields?: string[];
 
   @IsNotEmpty()
-  @IsString()
+  @Transform(({ value }) => new Date(value))
   from: Date;
 
   @IsNotEmpty()
-  @IsString()
+  @Transform(({ value }) => new Date(value))
   to: Date;
 
   
