@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Get,
 } from '@nestjs/common';
 import { ChargingSessionDataExporterService } from './charging-session-data-exporter.service';
 import { ApiTags } from '@nestjs/swagger';
@@ -18,6 +19,11 @@ import { ResponseStatus } from 'src/glolbal-interfaces/status';
 @Controller('charging-session-data-exporter')
 export class ChargingSessionDataExporterController {
   constructor(private readonly service: ChargingSessionDataExporterService) {}
+
+  @Get('/get-all-columns')
+  getAllColumns() {
+    return this.service.getAllColuns();
+  }
 
   @HttpCode(HttpStatus.ACCEPTED)
   @Post('/get-data')

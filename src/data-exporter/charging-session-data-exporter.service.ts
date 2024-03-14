@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { Between, DataSource } from 'typeorm';
 import {
@@ -6,7 +11,10 @@ import {
   Filters,
 } from './dto/chargingSessionReq.dto';
 import moment from 'moment';
-import { idArrayToString } from 'src/utilities/sharedMethods';
+import {
+  checkArrayElementsMatch,
+  idArrayToString,
+} from 'src/utilities/sharedMethods';
 import { ApiConfigService } from 'src/shared/config/config.service';
 import { ChargingSession } from 'src/entities/redshift/charging-session.entity';
 import {
@@ -33,6 +41,20 @@ export class ChargingSessionDataExporterService {
     page_size: number,
   ) {
     // let query = `select * from charging_session`;
+
+    const classElements = this.redshift
+      .getMetadata(ChargingSession)
+      .ownColumns.map((column) => column.propertyName);
+    const { isMatched, unmatchedFields } = checkArrayElementsMatch(
+      requestedFields,
+      classElements,
+    );
+    if (!isMatched)
+      throw new BadRequestException({
+        'Unmatched Fields': unmatchedFields,
+        Description:
+          'All requested fields are not exist in charging Session cube',
+      });
 
     let query = 'SELECT ';
 
@@ -139,6 +161,19 @@ export class ChargingSessionDataExporterService {
       throw new BadRequestException(
         `Not able to get data from server. Error: ${error.message}`,
       );
+    }
+  }
+
+  getAllColuns() {
+    try {
+      const columns = this.redshift
+        .getMetadata(ChargingSession)
+        .ownColumns.map((column) => column.propertyName);
+      return columns;
+    } catch (error) {
+      this.logger.error(error.message);
+      this.logger.error('Unable to fetch columns list');
+      throw new InternalServerErrorException(error.message);
     }
   }
 }

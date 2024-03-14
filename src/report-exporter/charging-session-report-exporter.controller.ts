@@ -1,4 +1,10 @@
-import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Post,
+  Get,
+} from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ChargingSessionReportExporterService } from './charging-session-report-exporter.service';
 import { ChargingSessionFieldsDto } from './dtos/chargingSessionFields.dto';
@@ -14,6 +20,11 @@ export class ChargingSessionReportExporterController {
 
   //API route for download link
 
+  @Get('/get-all-columns')
+  getAllColumns() {
+    return this.service.getAllColuns();
+  }
+
   @ApiResponse({
     status: 200,
     description: 'Request Successfull',
@@ -25,7 +36,7 @@ export class ChargingSessionReportExporterController {
   })
   @Post('/get-link')
   getReportLink(@Body() reqBody: ChargingSessionFieldsDto) {
-    const { from, to, filters } = reqBody;
+    const { from, to, filters, requestedFields } = reqBody;
     const [fromDate, toDate] = dateValidation(from, to);
     const maxDate = moment(fromDate).add(12, 'M');
     if (moment(fromDate).isAfter(maxDate)) {
@@ -33,7 +44,12 @@ export class ChargingSessionReportExporterController {
         'Can generate report for max of 12 months of duration.',
       );
     }
-    return this.service.getCsvReportLink(fromDate, toDate, filters);
+    return this.service.getCsvReportLink(
+      fromDate,
+      toDate,
+      filters,
+      requestedFields,
+    );
   }
 
   @Post('/get-report-on-email')
@@ -54,7 +70,7 @@ export class ChargingSessionReportExporterController {
       toDate,
       emailList,
       filters,
-      requestedFields
+      requestedFields,
     );
   }
 }

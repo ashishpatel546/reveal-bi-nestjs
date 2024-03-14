@@ -1,10 +1,15 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { Filters } from './dtos/chargingSessionFields.dto';
 import {
+  checkArrayElementsMatch,
   idArrayToString,
-  isElementsMatchClassProperties,
   processStringToCleanString,
 } from 'src/utilities/sharedMethods';
 import moment from 'moment';
@@ -141,8 +146,39 @@ export class ChargingSessionReportExporterService {
     return;
   }
 
-  private queryBuilder(from: Date, to: Date, filters: Filters) {
-    let query = `select * from charging_session`;
+  private queryBuilder(
+    from: Date,
+    to: Date,
+    filters: Filters,
+    requestedFields: string[],
+  ) {
+    const classElements = this.redshift
+      .getMetadata(ChargingSession)
+      .ownColumns.map((column) => column.propertyName);
+    const { isMatched, unmatchedFields } = checkArrayElementsMatch(
+      requestedFields,
+      classElements,
+    );
+    if (!isMatched)
+      throw new BadRequestException({
+        'Unmatched Fields': unmatchedFields,
+        Description:
+          'All requested fields are not exist in charging Session cube',
+      });
+
+    let query = 'SELECT ';
+
+    // Check if requestedFields array exists and has elements
+    if (requestedFields && requestedFields.length > 0) {
+      // Extract field names from requestedFields and join them with commas
+      const fieldNames = requestedFields.map((field) => field).join(', ');
+      query += fieldNames;
+    } else {
+      // If requestedFields array is empty or undefined, select all fields with *
+      query += '*';
+    }
+
+    query = query + ` from charging_session `;
 
     const fromString = moment(from).format('YYYY-MM-DD');
     const toString = moment(to).format('YYYY-MM-DD');
@@ -161,8 +197,13 @@ export class ChargingSessionReportExporterService {
     return query;
   }
 
-  async getCsvReportLink(from: Date, to: Date, filters: Filters) {
-    const query = this.queryBuilder(from, to, filters);
+  async getCsvReportLink(
+    from: Date,
+    to: Date,
+    filters: Filters,
+    requestedFields?: string[],
+  ) {
+    const query = this.queryBuilder(from, to, filters, requestedFields);
     const s3folder = `REPORT_EXPORTER/CHARGING_SESSION`;
     const uploadPath = `${s3folder}/report_${moment().format(
       'DDMMYYYYhhmmss',
@@ -187,15 +228,7 @@ export class ChargingSessionReportExporterService {
     filters: Filters,
     requestedFields?: string[],
   ) {
-    const isAllRequestedFieldsAvailable = isElementsMatchClassProperties(
-      ChargingSession,
-      requestedFields,
-    );
-    if (!isAllRequestedFieldsAvailable)
-      throw new BadRequestException(
-        'All requested fields are not exist in charging Session cube',
-      );
-    const query = this.queryBuilder(from, to, filters);
+    const query = this.queryBuilder(from, to, filters, requestedFields);
     const s3folder = `REPORT_EXPORTER/CHARGING_SESSION`;
     const uploadPath = `${s3folder}/report_${moment().format(
       'DDMMYYYYhhmmss',
@@ -221,5 +254,18 @@ export class ChargingSessionReportExporterService {
       description:
         'We are processing your request!! You will get email once report is genrated. Download link will be active for 48 hours',
     };
+  }
+
+  getAllColuns() {
+    try {
+      const columns = this.redshift
+        .getMetadata(ChargingSession)
+        .ownColumns.map((column) => column.propertyName);
+      return columns;
+    } catch (error) {
+      this.logger.error(error.message);
+      this.logger.error('Unable to fetch columns list');
+      throw new InternalServerErrorException(error.message);
+    }
   }
 }

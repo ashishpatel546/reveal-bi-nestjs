@@ -185,11 +185,23 @@ export function checkValidEmailList(emails: string[]) {
   return true;
 }
 
-export function isElementsMatchClassProperties<T>(classType: new () => T, arr: string[]): boolean {
-  // Create an instance of the class to get its property names
-  const instance = new classType();
-  const properties = Object.keys(instance);
-  
-  // Check if any element of the array matches any property of the class
-  return arr.every(element => properties.some(property => instance[property] === element));
+export function checkArrayElementsMatch(
+  arr1: string[],
+  arr2: string[],
+): { isMatched: boolean; unmatchedFields: string[] } {
+  const matchedFields: string[] = [];
+  const unmatchedFields: string[] = [];
+
+  arr1.forEach((element) => {
+    if (arr2.includes(element)) {
+      matchedFields.push(element);
+    } else {
+      unmatchedFields.push(element);
+    }
+  });
+
+  return {
+    isMatched: unmatchedFields.length === 0,
+    unmatchedFields,
+  };
 }

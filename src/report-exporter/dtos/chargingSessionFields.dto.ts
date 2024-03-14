@@ -1,6 +1,5 @@
 import { Transform } from 'class-transformer';
 import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { ChargingSession } from 'src/entities/redshift/charging-session.entity';
 
 export class Filters {
   @IsOptional()
@@ -54,7 +53,6 @@ export class Filters {
   state: string[];
 }
 
-
 export class ChargingSessionFieldsDto {
   @IsNotEmpty()
   @Transform(({ value }) => new Date(value))
@@ -64,12 +62,13 @@ export class ChargingSessionFieldsDto {
   @Transform(({ value }) => new Date(value))
   to: Date;
 
+  @IsOptional()
   @IsNotEmpty({ each: true })
   emailList: string[];
 
-  @IsNotEmpty()
-  filters: Filters;
+  @IsOptional()
+  requestedFields: string[];
 
   @IsNotEmpty()
-  requestedFields: string[];
+  filters: Filters;
 }
