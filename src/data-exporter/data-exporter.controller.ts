@@ -1,17 +1,29 @@
-import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+} from '@nestjs/common';
 import { ChargingSessionDataExporterService } from './charging-session-data-exporter.service';
 import { ApiTags } from '@nestjs/swagger';
 import { ChargingSessionRequestDto } from './dto/chargingSessionReq.dto';
 import moment from 'moment';
 import { dateValidation } from 'src/utilities/dateMethods';
+import { ChargingSessionDataResponse } from './interface/dataResponse.dto';
+import { ResponseStatus } from 'src/glolbal-interfaces/status';
 
 @ApiTags('Charging Session Data Exporter')
 @Controller('charging-session-data-exporter')
 export class ChargingSessionDataExporterController {
   constructor(private readonly service: ChargingSessionDataExporterService) {}
 
+  @HttpCode(HttpStatus.ACCEPTED)
   @Post('/get-data')
-  getData(@Body() reqBody: ChargingSessionRequestDto) {
+  getData(
+    @Body() reqBody: ChargingSessionRequestDto,
+  ): Promise<ResponseStatus<ChargingSessionDataResponse>> {
     const { from, to } = reqBody;
     const [fromDate, toDate] = dateValidation(from, to);
     const maxDate = moment(fromDate).add(12, 'M');

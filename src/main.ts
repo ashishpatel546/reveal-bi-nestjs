@@ -14,7 +14,6 @@ import { ApiConfigService } from './shared/config/config.service';
 import { setupSwagger } from './setupSwagger';
 import { loggerMiddleware } from './middlewares/reqeust-logger.middleware';
 import { getHeapStatistics } from 'v8';
-import { DbConfig } from './shared/config/dbConfig';
 import { RevealBiMiddleware } from './middlewares/reveal-middleware';
 
 async function bootstrap() {
@@ -28,10 +27,9 @@ async function bootstrap() {
   );
   app.enableCors({ origin: '*' });
   const configService = app.select(SharedModule).get(ApiConfigService);
-  const dbConfig = app.select(SharedModule).get(DbConfig);
 
   //Reveal BI middleware
-  app.use('/reveal-bi-server',RevealBiMiddleware)
+  app.use('/reveal-bi-server', RevealBiMiddleware);
 
   //set api version
   const apiVersion = configService.apiVersion;
@@ -39,8 +37,6 @@ async function bootstrap() {
     type: VersioningType.URI,
     defaultVersion: apiVersion,
   });
-
-  
 
   if (configService.documentationEnabled) {
     setupSwagger(app);
@@ -56,7 +52,7 @@ async function bootstrap() {
       exceptionFactory: (errors) => new UnprocessableEntityException(errors),
     }),
   );
-  
+
   const port = configService.appConfig.port;
 
   await app.listen(port);

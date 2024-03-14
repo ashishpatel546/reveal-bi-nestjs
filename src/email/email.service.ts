@@ -6,15 +6,14 @@ import { ApiConfigService } from 'src/shared/config/config.service';
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private fromEmail: string = this.apiConfig.getFromEmail
+  private fromEmail: string = this.apiConfig.getFromEmail;
   constructor(
     private mailService: MailerService,
     private customEmailService: CustomEmailService,
-    private readonly apiConfig: ApiConfigService
+    private readonly apiConfig: ApiConfigService,
   ) {}
 
-  async sendEmailText(to: string, subject: string, html: string) {
-    
+  async sendEmailText(to: string[], subject: string, html: string) {
     try {
       await this.mailService.sendMail({
         to: to,
@@ -22,14 +21,13 @@ export class EmailService {
         subject: subject,
         html: html,
       });
-      return 'success'
+      return 'success';
     } catch (error) {
       this.logger.error(error.message);
       this.logger.error('Unable to send email');
-      return 'fail'
+      return 'fail';
     }
   }
-
 
   async sendEmailAsAttachment(
     to: string | string[],

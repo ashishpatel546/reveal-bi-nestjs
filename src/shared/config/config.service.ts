@@ -63,12 +63,12 @@ export class ApiConfigService {
     return this.getBoolean('ENABLE_DOCUMENTATION');
   }
 
-  get dataFetchLimit():number{
-    return this.getNumber('DATA_FETCH_LIMIT')
+  get dataFetchLimit(): number {
+    return this.getNumber('DATA_FETCH_LIMIT');
   }
 
-  get maxPageSize():number{
-    return this.getNumber('MAX_PAGE_SIZE')
+  get maxPageSize(): number {
+    return this.getNumber('MAX_PAGE_SIZE');
   }
 
   get getThrottleTTL(): number {
@@ -83,11 +83,9 @@ export class ApiConfigService {
     return this.getString('FROM_EMAIL_ID');
   }
 
-
   get appConfig(): { port: number } {
     return {
       port: this.getNumber('SERVICE_PORT'),
     };
   }
-
 }

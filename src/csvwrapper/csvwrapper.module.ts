@@ -5,6 +5,6 @@ import { CsvWrapperService } from './csvwrapper.service';
 @Module({
   imports: [],
   providers: [CsvWrapperService],
-  exports: [CsvWrapperService]
+  exports: [CsvWrapperService],
 })
 export class CsvWrapperModule {}

@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { join } from 'path';
 import reveal, {
   IRVUserContext,
@@ -9,7 +9,7 @@ import reveal, {
   RVUsernamePasswordDataSourceCredential,
   RevealOptions,
 } from 'reveal-sdk-node';
-import fs, { ReadStream } from 'fs';
+import fs from 'fs';
 import { Logger } from '@nestjs/common';
 import { DbConfig } from 'src/shared/config/dbConfig';
 import { ConfigService } from '@nestjs/config';
@@ -17,7 +17,7 @@ import { ConfigService } from '@nestjs/config';
 export function RevealBiMiddleware(
   req: Request,
   res: Response,
-  next: NextFunction,
+  // _next: NextFunction,
 ) {
   const logger = new Logger('Reveal-BI-Middleware');
   logger.log('Reveal middleware called');
@@ -26,7 +26,7 @@ export function RevealBiMiddleware(
   const dbConfig = new DbConfig(configService);
 
   const authenticationProvider = async (
-    userContext: IRVUserContext,
+    _userContext: IRVUserContext,
     dataSource: RVDashboardDataSource,
   ) => {
     logger.log('hting authentication provider');
@@ -39,7 +39,7 @@ export function RevealBiMiddleware(
   };
 
   const dataSourceProvider = async (
-    userContext: IRVUserContext,
+    _userContext: IRVUserContext,
     dataSource: RVDashboardDataSource,
   ) => {
     logger.log('hitting datasource provider');
@@ -95,16 +95,16 @@ export function RevealBiMiddleware(
     return userContext;
   }
 
-  const dashboardProvider = (
-    userContext: IRVUserContext,
-    dashboardId: string,
-  ) => {};
+  // const dashboardProvider = (
+  //   userContext: IRVUserContext,
+  //   dashboardId: string,
+  // ) => {};
 
-  const dashboardStorageProvider = (
-    userContext: IRVUserContext | null,
-    dashboardId: string,
-    stream: ReadStream,
-  ) => {};
+  // const dashboardStorageProvider = (
+  //   userContext: IRVUserContext | null,
+  //   dashboardId: string,
+  //   stream: ReadStream,
+  // ) => {};
 
   const revealOptions: RevealOptions = {
     authenticationProvider: authenticationProvider,

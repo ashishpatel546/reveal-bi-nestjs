@@ -1,11 +1,9 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { RevealBiController } from './reveal-bi.controller';
 import { RevealBiService } from './reveal-bi.service';
 
 @Module({
   controllers: [RevealBiController],
-  providers: [RevealBiService]
+  providers: [RevealBiService],
 })
-export class RevealBiModule{
-  
-}
+export class RevealBiModule {}

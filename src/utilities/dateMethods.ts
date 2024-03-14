@@ -87,4 +87,3 @@ export function dateValidation(start_date: Date, end_date: Date): Date[] {
     throw new BadRequestException('Invalid Date format recieved');
   return [from, to];
 }
-

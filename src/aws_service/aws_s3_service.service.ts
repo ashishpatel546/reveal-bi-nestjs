@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as aws from 'aws-sdk';
 import { AwsConfig } from 'src/shared/config/awsconfig';
-import { PassThrough, Readable, Stream } from 'stream';
-import { stringify } from 'csv-stringify';
+import { Stream } from 'stream';
 import { createCsvString } from 'src/utilities/sharedMethods';
 
 interface CORS_Policy {
@@ -44,7 +43,7 @@ export class AwsS3Service {
 
   async uploadfileInCsv(
     filename: string,
-    fileBuffer: Buffer | String | Stream,
+    fileBuffer: Buffer | string | Stream,
   ) {
     const params = {
       Bucket: this.AWS_S3_BUCKET,
@@ -77,13 +76,10 @@ export class AwsS3Service {
       .promise();
   }
 
-   async uploadCsvToS3InChunks(
-    key: string,
-    data: unknown[],
-  ): Promise<void> {
+  async uploadCsvToS3InChunks(key: string, data: unknown[]): Promise<void> {
     // Get the total number of data items
-    const bucket = this.AWS_S3_BUCKET
-    const chunkSize = 100000
+    const bucket = this.AWS_S3_BUCKET;
+    const chunkSize = 100000;
     const totalItems = data.length;
 
     // Initialize start index and processed count
@@ -91,74 +87,75 @@ export class AwsS3Service {
     let processed = 0;
 
     try {
-      
-    
-    // Create a multipart upload
-    const multipartUpload = await this.s3
-      .createMultipartUpload({
-        Bucket: bucket,
-        Key: key,
-        ContentType: 'text/csv',
-      })
-      .promise();
+      // Create a multipart upload
+      const multipartUpload = await this.s3
+        .createMultipartUpload({
+          Bucket: bucket,
+          Key: key,
+          ContentType: 'text/csv',
+        })
+        .promise();
 
-    // Array to hold uploaded part information
-    const uploadedParts: AWS.S3.CompletedPart[] = [];
+      // Array to hold uploaded part information
+      const uploadedParts: AWS.S3.CompletedPart[] = [];
 
-    try {
-      // Loop until all data items are processed
-      while (processed < totalItems) {
-        // Calculate the end index of the current chunk
-        const end = Math.min(start + chunkSize, totalItems);
+      try {
+        // Loop until all data items are processed
+        while (processed < totalItems) {
+          // Calculate the end index of the current chunk
+          const end = Math.min(start + chunkSize, totalItems);
 
-        // Get the current chunk of data
-        const currentChunk = data.slice(start, end);
+          // Get the current chunk of data
+          const currentChunk = data.slice(start, end);
 
-        // Create CSV string for the current chunk
-        const csvString = await createCsvString(currentChunk, start === 0);
+          // Create CSV string for the current chunk
+          const csvString = await createCsvString(currentChunk, start === 0);
 
-        // Upload the CSV string as a part of the multipart upload
-        const partNumber = uploadedParts.length + 1;
-        const uploadedPart = await this.uploadMultipartPart(
-          multipartUpload.UploadId,
-          partNumber,
-          csvString,
-          key,
-        );
+          // Upload the CSV string as a part of the multipart upload
+          const partNumber = uploadedParts.length + 1;
+          const uploadedPart = await this.uploadMultipartPart(
+            multipartUpload.UploadId,
+            partNumber,
+            csvString,
+            key,
+          );
 
-        // Add uploaded part information to the array
-        uploadedParts?.push({ PartNumber: partNumber, ETag: uploadedPart.ETag });
+          // Add uploaded part information to the array
+          uploadedParts?.push({
+            PartNumber: partNumber,
+            ETag: uploadedPart.ETag,
+          });
 
-        // Update the start index and processed count for the next iteration
-        start = end;
-        processed += currentChunk.length;
+          // Update the start index and processed count for the next iteration
+          start = end;
+          processed += currentChunk.length;
+        }
+
+        // Complete the multipart upload
+        await this.s3
+          .completeMultipartUpload({
+            Bucket: bucket,
+            Key: key,
+            MultipartUpload: { Parts: uploadedParts },
+            UploadId: multipartUpload.UploadId,
+          })
+          .promise();
+      } catch (err) {
+        // Abort the multipart upload on error
+        await this.s3
+          .abortMultipartUpload({
+            Bucket: bucket,
+            Key: key,
+            UploadId: multipartUpload.UploadId,
+          })
+          .promise();
+        this.logger.error(err.message);
+        this.logger.error('Unable to do mulitpart uplload');
       }
-
-      // Complete the multipart upload
-      await this.s3
-        .completeMultipartUpload({
-          Bucket: bucket,
-          Key: key,
-          MultipartUpload: { Parts: uploadedParts },
-          UploadId: multipartUpload.UploadId,
-        })
-        .promise();
-    } catch (err) {
-      // Abort the multipart upload on error
-      await this.s3
-        .abortMultipartUpload({
-          Bucket: bucket,
-          Key: key,
-          UploadId: multipartUpload.UploadId,
-        })
-        .promise();
-      this.logger.error(err.message)
-      this.logger.error('Unable to do mulitpart uplload')
+    } catch (error) {
+      this.logger.error(error.message);
+      this.logger.error('Unable to do mulitpart uplload');
     }
-  } catch (error) {
-      this.logger.error(error.message)
-      this.logger.error('Unable to do mulitpart uplload')
-  }
   }
 
   getSignedUrl(key: string, expires?: number) {
@@ -175,7 +172,7 @@ export class AwsS3Service {
     keys.forEach((key) => {
       objects_keys.push({ Key: key });
     });
-    let params = {
+    const params = {
       Bucket: this.AWS_S3_BUCKET,
       Delete: {
         Objects: objects_keys,
@@ -191,7 +188,7 @@ export class AwsS3Service {
   }
 
   getBucketObjects(keyOrPrefix: string) {
-    let params = {
+    const params = {
       Bucket: this.AWS_S3_BUCKET,
       Prefix: keyOrPrefix,
     };
@@ -199,7 +196,7 @@ export class AwsS3Service {
   }
 
   uploadJsonInTxt(filename: string, data: string) {
-    let params = {
+    const params = {
       Bucket: this.AWS_S3_BUCKET,
       Key: filename,
       Body: data,
@@ -208,7 +205,7 @@ export class AwsS3Service {
   }
 
   async setCorsPolicy(cors_policy: CORS_Policy) {
-    let params = {
+    const params = {
       Bucket: this.AWS_S3_BUCKET,
       CORSConfiguration: {
         CORSRules: [

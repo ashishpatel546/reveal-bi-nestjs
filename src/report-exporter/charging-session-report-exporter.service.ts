@@ -1,16 +1,10 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import {
-  ChargingSessionFieldsDto,
-  Filters,
-} from './dtos/chargingSessionFields.dto';
+import { Filters } from './dtos/chargingSessionFields.dto';
 import {
   idArrayToString,
+  isElementsMatchClassProperties,
   processStringToCleanString,
 } from 'src/utilities/sharedMethods';
 import moment from 'moment';
@@ -18,6 +12,7 @@ import { CsvWrapperService } from 'src/csvwrapper/csvwrapper.service';
 import { AwsS3Service } from 'src/aws_service/aws_s3_service.service';
 import { ApiConfigService } from 'src/shared/config/config.service';
 import { EmailService } from 'src/email/email.service';
+import { ChargingSession } from 'src/entities/redshift/charging-session.entity';
 
 @Injectable()
 export class ChargingSessionReportExporterService {
@@ -73,7 +68,7 @@ export class ChargingSessionReportExporterService {
 
   private async generateReportData(query: string) {
     const reportArray: unknown[] = [];
-    let limit = this.limit;
+    const limit = this.limit;
     let processed = 0;
     while (true) {
       const customQuery = `${query} offset ${processed} limit ${limit}`;
@@ -94,7 +89,7 @@ export class ChargingSessionReportExporterService {
   }
 
   //todo need to work on it
-  private emptyReportDataHandler(email: string) {
+  private emptyReportDataHandler(email: string[]) {
     this.logger.log(`There is no data for upload.`);
     const subject = `Report Download Request`;
     const body = `<h2>Hello!</h2>
@@ -107,11 +102,12 @@ export class ChargingSessionReportExporterService {
   private async generateAndUploadReport(
     query: string,
     uploadPath: string,
-    email?: string,
+    emails?: string[],
   ) {
-    const report = await this.generateReportData(query);
+    const reqStartTime = new Date();
+    let report = await this.generateReportData(query);
     if (!report || report?.length === 0) {
-      this.emptyReportDataHandler(email);
+      this.emptyReportDataHandler(emails);
       return;
     }
     this.logger.log(`No of records for the file is: ${report?.length ?? 0}`);
@@ -129,10 +125,19 @@ export class ChargingSessionReportExporterService {
       this.logger.log('Handling large files for approx size greater than 5mb');
       await this.awsS3.uploadCsvToS3InChunks(uploadPath, report);
     }
-
+    const reqProcessedTimestamp = new Date();
+    const timeTakenToProcess = moment(reqProcessedTimestamp).diff(
+      reqStartTime,
+      'minute',
+    );
+    this.logger.log(
+      `${report.length} records processed in ${
+        timeTakenToProcess ? timeTakenToProcess : 'lest than 1'
+      } minutes`,
+    );
     this.logger.log('!!!Uploading finished....');
     this.logger.log(`File is available on s3 via link provided...`);
-    report.length = 0;
+    report = null;
     return;
   }
 
@@ -178,16 +183,25 @@ export class ChargingSessionReportExporterService {
   async getCsvReportOnEmail(
     from: Date,
     to: Date,
-    email: string,
+    emails: string[],
     filters: Filters,
+    requestedFields?: string[],
   ) {
+    const isAllRequestedFieldsAvailable = isElementsMatchClassProperties(
+      ChargingSession,
+      requestedFields,
+    );
+    if (!isAllRequestedFieldsAvailable)
+      throw new BadRequestException(
+        'All requested fields are not exist in charging Session cube',
+      );
     const query = this.queryBuilder(from, to, filters);
     const s3folder = `REPORT_EXPORTER/CHARGING_SESSION`;
     const uploadPath = `${s3folder}/report_${moment().format(
       'DDMMYYYYhhmmss',
     )}.csv`;
     const download_url = this.awsS3.getSignedUrl(uploadPath, 48 * 60 * 60);
-    this.generateAndUploadReport(query, uploadPath, email)
+    this.generateAndUploadReport(query, uploadPath, emails)
       .then(() => {
         const emailHtml = `<h2>Hello!</h2>
         <p>Your download is ready. Click the button below to download:</p>
@@ -195,7 +209,7 @@ export class ChargingSessionReportExporterService {
         <p>If you have any questions, feel free to contact us. Link is valid till 48 hours</p>
         <p>Best regards,<br>Blink Charging<br>Charge on</p>`;
         const subject = `Report is Ready to download!`;
-        return this.emailService.sendEmailText(email, subject, emailHtml);
+        return this.emailService.sendEmailText(emails, subject, emailHtml);
       })
       .then((res) => {
         if (res === 'success') this.logger.log(`Email sent successfully`);
@@ -204,7 +218,8 @@ export class ChargingSessionReportExporterService {
       .catch((err) => this.logger.error(err.message));
     return {
       msg: 'SUCCESS',
-      description: 'We are processing your request!! You will get email once report is genrated. Download link will be active for 48 hours',
+      description:
+        'We are processing your request!! You will get email once report is genrated. Download link will be active for 48 hours',
     };
   }
 }

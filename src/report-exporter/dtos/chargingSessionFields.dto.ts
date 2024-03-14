@@ -1,12 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  IsArray,
-  IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { ChargingSession } from 'src/entities/redshift/charging-session.entity';
 
 export class Filters {
   @IsOptional()
@@ -60,6 +54,7 @@ export class Filters {
   state: string[];
 }
 
+
 export class ChargingSessionFieldsDto {
   @IsNotEmpty()
   @Transform(({ value }) => new Date(value))
@@ -69,10 +64,12 @@ export class ChargingSessionFieldsDto {
   @Transform(({ value }) => new Date(value))
   to: Date;
 
-  @IsNotEmpty()
-  @IsEmail()
-  email: string;
+  @IsNotEmpty({ each: true })
+  emailList: string[];
 
   @IsNotEmpty()
   filters: Filters;
+
+  @IsNotEmpty()
+  requestedFields: string[];
 }

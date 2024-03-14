@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { isEmail } from 'class-validator';
 import { randomBytes } from 'crypto';
 import { stringify } from 'csv-stringify';
 export async function findFromCache<T>(
@@ -132,37 +133,63 @@ export function arrayToCsv(data: unknown[]): string {
   return csv;
 }
 
-
-export async function  createCsvString(
+export async function createCsvString(
   data: any[],
-  includeHeader: boolean
+  includeHeader: boolean,
 ): Promise<string> {
   // Replace null values with empty strings
-  const dataWithEmptyStrings = data.map(obj => {
+  const dataWithEmptyStrings = data.map((obj) => {
     const newObj = {};
     for (const key in obj) {
-      newObj[key] = obj[key] !== null || obj[key]?.length !==0 ? obj[key] : ' ';
+      newObj[key] =
+        obj[key] !== null || obj[key]?.length !== 0 ? obj[key] : ' ';
     }
     return newObj;
   });
 
-  this.logger.log(`Modified the data for empty string.`)
-    this.logger.log(`Data length to convert to csv is now: ${dataWithEmptyStrings?.length ?? 0}`)
-  
-    return new Promise<string>((resolve, reject) => {
-      stringify(dataWithEmptyStrings, { header: includeHeader , quoted_empty: true}, (err, csvString) => {
+  Logger.log(`Modified the data for empty string.`);
+  Logger.log(
+    `Data length to convert to csv is now: ${
+      dataWithEmptyStrings?.length ?? 0
+    }`,
+  );
+
+  return new Promise<string>((resolve, reject) => {
+    stringify(
+      dataWithEmptyStrings,
+      { header: includeHeader, quoted_empty: true },
+      (err, csvString) => {
         if (err) {
           reject(err);
         } else {
           resolve(csvString);
         }
-      });
-    });
+      },
+    );
+  });
 }
 
-export function processStringToCleanString(inputString: string){
+export function processStringToCleanString(inputString: string) {
+  if (!inputString || inputString?.length === 0) return '';
   const regex = /[\r\n\t\f\v!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/g;
   // Replace all occurrences of the matched characters with empty spaces
   const cleanedString = inputString.replace(regex, ' ');
   return cleanedString;
+}
+
+export function checkValidEmailList(emails: string[]) {
+  if (!emails || emails.length === 0) return false;
+  for (const email of emails) {
+    if (!isEmail(email)) return false;
+  }
+  return true;
+}
+
+export function isElementsMatchClassProperties<T>(classType: new () => T, arr: string[]): boolean {
+  // Create an instance of the class to get its property names
+  const instance = new classType();
+  const properties = Object.keys(instance);
+  
+  // Check if any element of the array matches any property of the class
+  return arr.every(element => properties.some(property => instance[property] === element));
 }

@@ -1,21 +1,11 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  ParseIntPipe,
-  Post,
-  Query,
-  Res,
-  StreamableFile,
-} from '@nestjs/common';
-import { ApiBody, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
+import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ChargingSessionReportExporterService } from './charging-session-report-exporter.service';
-import { Response } from 'express';
 import { ChargingSessionFieldsDto } from './dtos/chargingSessionFields.dto';
 import { ReportExporterResponse } from './dtos/reportApiResponse.dto';
 import { dateValidation } from 'src/utilities/dateMethods';
 import moment from 'moment';
+import { checkValidEmailList } from 'src/utilities/sharedMethods';
 
 @ApiTags('Charging Session Report Exporter')
 @Controller('charging-session-report-exporter')
@@ -48,7 +38,7 @@ export class ChargingSessionReportExporterController {
 
   @Post('/get-report-on-email')
   getReportViaEmail(@Body() reqBody: ChargingSessionFieldsDto) {
-    const { from, to, filters, email } = reqBody;
+    const { from, to, filters, emailList, requestedFields } = reqBody;
     const [fromDate, toDate] = dateValidation(from, to);
     const maxDate = moment(fromDate).add(12, 'M');
     if (moment(fromDate).isAfter(maxDate)) {
@@ -56,6 +46,15 @@ export class ChargingSessionReportExporterController {
         'Can generate report for max of 12 months of duration.',
       );
     }
-    return this.service.getCsvReportOnEmail(fromDate, toDate,email, filters);
+    const isValidEmailList = checkValidEmailList(emailList);
+    if (!isValidEmailList)
+      throw new BadRequestException('Emails are not valid');
+    return this.service.getCsvReportOnEmail(
+      fromDate,
+      toDate,
+      emailList,
+      filters,
+      requestedFields
+    );
   }
 }

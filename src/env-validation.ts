@@ -5,9 +5,7 @@ import {
   IsPort,
   IsString,
   validateSync,
-  IsDate,
   IsNotEmpty,
-  IsNumber,
   IsEmail,
 } from 'class-validator';
 

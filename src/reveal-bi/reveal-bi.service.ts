@@ -1,5 +1,4 @@
 import {
-  ExecutionContext,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -9,12 +8,11 @@ import fs from 'fs/promises';
 import { join, parse } from 'path';
 import { DbConfig } from 'src/shared/config/dbConfig';
 
-@Injectable({scope: Scope.REQUEST})
+@Injectable({ scope: Scope.REQUEST })
 export class RevealBiService {
   private logger = new Logger(RevealBiService.name);
 
   constructor(private readonly dbConfig: DbConfig) {}
-
 
   async getAllDashboards() {
     try {
