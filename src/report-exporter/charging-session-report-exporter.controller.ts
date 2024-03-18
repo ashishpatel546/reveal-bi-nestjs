@@ -38,10 +38,10 @@ export class ChargingSessionReportExporterController {
   getReportLink(@Body() reqBody: ChargingSessionFieldsDto) {
     const { from, to, filters, requestedFields } = reqBody;
     const [fromDate, toDate] = dateValidation(from, to);
-    const maxDate = moment(fromDate).add(12, 'M');
+    const maxDate = moment(fromDate).add(3, 'M');
     if (moment(fromDate).isAfter(maxDate)) {
       throw new BadRequestException(
-        'Can generate report for max of 12 months of duration.',
+        'Can generate report for max of 3 months of duration.',
       );
     }
     return this.service.getCsvReportLink(
@@ -56,10 +56,10 @@ export class ChargingSessionReportExporterController {
   getReportViaEmail(@Body() reqBody: ChargingSessionFieldsDto) {
     const { from, to, filters, emailList, requestedFields } = reqBody;
     const [fromDate, toDate] = dateValidation(from, to);
-    const maxDate = moment(fromDate).add(12, 'M');
+    const maxDate = moment(fromDate).add(3, 'M');
     if (moment(fromDate).isAfter(maxDate)) {
       throw new BadRequestException(
-        'Can generate report for max of 12 months of duration.',
+        'Can generate report for max of 3 months of duration.',
       );
     }
     const isValidEmailList = checkValidEmailList(emailList);
