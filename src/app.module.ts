@@ -11,6 +11,7 @@ import { ReportExporterModule } from './report-exporter/report-exporter.module';
 import { CsvWrapperModule } from './csvwrapper/csvwrapper.module';
 import { AwsServiceModule } from './aws_service/aws_service.module';
 import { DataExporterModule } from './data-exporter/charging-session-data-exporter.module';
+import { GraphDataModule } from './graph-data/graph-data.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { DataExporterModule } from './data-exporter/charging-session-data-export
     CsvWrapperModule,
     AwsServiceModule,
     DataExporterModule,
+    GraphDataModule,
   ],
   controllers: [AppController],
   providers: [AppService],
