@@ -1,3 +1,3 @@
-export enum Report {
+export enum Reports {
     HOST_REVENUE = 'HOST_REVENUE'
 }

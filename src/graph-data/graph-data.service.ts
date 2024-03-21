@@ -6,12 +6,16 @@ import {
   GraphDistinctValueRequestDto,
 } from './dto/graphDistinctValueRequest.dto';
 import { idArrayToString } from 'src/utilities/sharedMethods';
+import { GraphDataRequestDto } from './dto/graph-data-request.dto';
+import { ChargingSessionGraphDataProiver } from './charging-session-graph-data.provider';
+import { Reports } from './enum/report-enum';
 
 @Injectable()
 export class GraphDataService {
   private logger = new Logger(GraphDataService.name);
   constructor(
     @InjectDataSource('Redshift') private readonly redshift: DataSource,
+    private readonly csGraphProvider: ChargingSessionGraphDataProiver,
   ) {}
 
   private addFiltersToQuery(query: string, filters: Filter[]) {
@@ -19,15 +23,19 @@ export class GraphDataService {
       const filterName = filter.fieldName;
       const filterValue = filter.values;
       if (!filterValue || filterValue.length === 0) continue;
-      if(filterValue.includes('all') || filterValue.includes('All') || filterValue.includes('ALL')){
-        continue
+      if (
+        filterValue.includes('all') ||
+        filterValue.includes('All') ||
+        filterValue.includes('ALL')
+      ) {
+        continue;
       }
       if (query.includes('where')) query += ` and`;
       else query += `where`;
-      const fieldValueString = idArrayToString(filterValue)
-      query += ` ${filterName} in (${fieldValueString})`
+      const fieldValueString = idArrayToString(filterValue);
+      query += ` ${filterName} in (${fieldValueString})`;
     }
-    return query
+    return query;
   }
 
   private async queryBuilder(
@@ -40,7 +48,7 @@ export class GraphDataService {
       for (const record of reqFields) {
         const field = record;
         let query = `select distinct(${field}) from ${table_name} `;
-        query = this.addFiltersToQuery(query, filters)
+        query = this.addFiltersToQuery(query, filters);
         console.log(query);
         const data = await this.redshift.query(query);
         result[field] = data.map((d) => d[field]);
@@ -66,5 +74,33 @@ export class GraphDataService {
       filters,
     );
     return result;
+  }
+
+  async getData(reqData: GraphDataRequestDto) {
+    const {
+      report_name,
+      day_wise,
+      quarter_wise,
+      year_wise,
+      fetching_crieteria,
+      month_wise,
+      filters
+    } = reqData;
+    switch (report_name) {
+      case Reports.HOST_REVENUE:
+        return this.csGraphProvider.getHostRevenue(
+          fetching_crieteria,
+          day_wise,
+          quarter_wise,
+          year_wise,
+          month_wise,
+          filters
+        );
+        break;
+
+      default:
+        throw new BadRequestException('Report name does not exist')
+        break;
+    }
   }
 }
