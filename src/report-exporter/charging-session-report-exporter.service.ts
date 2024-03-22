@@ -4,6 +4,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  Scope,
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
@@ -26,11 +27,13 @@ import { Request } from 'express';
 import { ThrottlerMiddleware } from 'src/middlewares/throtller-middleware';
 import { ThrottlerService } from 'src/throttler/throttler.service';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class ChargingSessionReportExporterService {
   private logger = new Logger(ChargingSessionReportExporterService.name);
   private limit = this.apiConfig.dataFetchLimit;
-  private readonly serverUrl = `${this.request.protocol}://${this.request.get('host')}`;
+  private readonly serverUrl = `${this.request.protocol}://${this.request.get(
+    'host',
+  )}`;
 
   constructor(
     @InjectDataSource('Redshift') private readonly redshift: DataSource,
@@ -39,7 +42,7 @@ export class ChargingSessionReportExporterService {
     private readonly apiConfig: ApiConfigService,
     private readonly emailService: EmailService,
     @Inject(REQUEST) private readonly request: Request,
-    private readonly throttledService: ThrottlerService
+    private readonly throttledService: ThrottlerService,
   ) {}
 
   private async mapRawTodata(dataArray: object[]) {
@@ -57,6 +60,7 @@ export class ChargingSessionReportExporterService {
         return record;
       });
     } catch (error) {
+      this.throttledService.deleteEntry(this.request.ip);
       this.logger.error(error.message);
       this.logger.error('Unable to map data to proper format');
     }
@@ -75,6 +79,7 @@ export class ChargingSessionReportExporterService {
         const mappedData = await this.mapRawTodata(data);
         reportArray.push(...mappedData);
       } catch (error) {
+        this.throttledService.deleteEntry(this.request.ip);
         this.logger.error('Unable to fetch data from server');
         this.logger.error(error.message);
         return null;
@@ -104,7 +109,7 @@ export class ChargingSessionReportExporterService {
     let report = await this.generateReportData(query);
     if (!report || report?.length === 0) {
       this.emptyReportDataHandler(emails);
-      this.throttledService.deleteEntry(this.request.ip)
+      this.throttledService.deleteEntry(this.request.ip);
       return;
     }
     this.logger.log(`No of records for the file is: ${report?.length ?? 0}`);
@@ -134,7 +139,7 @@ export class ChargingSessionReportExporterService {
     );
     this.logger.log('!!!Uploading finished....');
     this.logger.log(`File is available on s3 via link provided...`);
-    this.throttledService.deleteEntry(this.request.ip)
+    this.throttledService.deleteEntry(this.request.ip);
     report = null;
     return;
   }
@@ -194,23 +199,28 @@ export class ChargingSessionReportExporterService {
       requestedFields,
       classElements,
     );
-    if (!isMatched)
+    if (!isMatched) {
+      this.throttledService.deleteEntry(this.request.ip);
       throw new BadRequestException({
         'Unmatched Fields': unmatchedFields,
         Description:
           'All requested fields are not exist in charging Session cube',
       });
+    }
+
     const filterKeys = filters.map((f) => f.fieldName);
     const {
       isMatched: isFIlterKeysMatched,
       unmatchedFields: filterUnmatchedFields,
     } = checkArrayElementsMatch(filterKeys, classElements);
-    if (!isFIlterKeysMatched)
+    if (!isFIlterKeysMatched) {
+      this.throttledService.deleteEntry(this.request.ip);
       throw new BadRequestException({
         'Unmatched Fields': filterUnmatchedFields,
         Description:
           'All requested fields are not exist in charging Session cube',
       });
+    }
 
     // let query = 'SELECT ';
 
@@ -310,7 +320,10 @@ export class ChargingSessionReportExporterService {
         if (res === 'success') this.logger.log(`Email sent successfully`);
         else this.logger.log('Email sending failed');
       })
-      .catch((err) => this.logger.error(err.message));
+      .catch((err) => {
+        this.logger.error(err.message);
+        this.throttledService.deleteEntry(this.request.ip);
+      });
     return {
       msg: 'SUCCESS',
       description:
@@ -323,10 +336,12 @@ export class ChargingSessionReportExporterService {
       const columns = this.redshift
         .getMetadata(ChargingSession)
         .ownColumns.map((column) => column.propertyName);
+      this.throttledService.deleteEntry(this.request.ip);
       return columns;
     } catch (error) {
       this.logger.error(error.message);
       this.logger.error('Unable to fetch columns list');
+      this.throttledService.deleteEntry(this.request.ip);
       throw new InternalServerErrorException(error.message);
     }
   }
