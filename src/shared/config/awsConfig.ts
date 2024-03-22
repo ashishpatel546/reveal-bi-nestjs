@@ -62,4 +62,9 @@ export class AwsConfig {
   get awsS3AllowedMethod() {
     return this.getString('AWS_CORS_ALLOWED_METHODS');
   }
+
+  get awsS3EnctrypKey(){
+    return this.getString('AWS_S3_URL_ENCRYPT_KEY')
+  }
+
 }

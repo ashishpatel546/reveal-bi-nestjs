@@ -104,6 +104,10 @@ class EnvironmentVariables {
 
   @IsString()
   @IsNotEmpty()
+  AWS_S3_URL_ENCRYPT_KEY: string;
+
+  @IsString()
+  @IsNotEmpty()
   DATA_FETCH_LIMIT: string;
 
   @IsString()

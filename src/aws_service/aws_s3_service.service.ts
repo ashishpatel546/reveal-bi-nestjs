@@ -3,6 +3,7 @@ import * as aws from 'aws-sdk';
 import { AwsConfig } from 'src/shared/config/awsconfig';
 import { Stream } from 'stream';
 import { createCsvString } from 'src/utilities/sharedMethods';
+import * as crypto from 'crypto';
 
 interface CORS_Policy {
   AllowedMethods: string[];
@@ -19,6 +20,8 @@ export class AwsS3Service {
     secretAccessKey: this.awsConfig.awsS3SecretKey,
     region: this.awsConfig.awsS3Region,
   });
+  private readonly key: Buffer = crypto.scryptSync(this.awsConfig.awsS3EnctrypKey, 'salt', 32);;
+  private readonly iv: Buffer =Buffer.alloc(16, 0); // 16 bytes IV;
   constructor(private readonly awsConfig: AwsConfig) {}
 
   getS3Object() {
@@ -165,6 +168,20 @@ export class AwsS3Service {
       Expires: expires,
     };
     return this.s3.getSignedUrl('getObject', params);
+  }
+
+  encryptUrl(url: string): string {
+    const cipher = crypto.createCipheriv('aes-256-cbc', this.key, this.iv);
+    let encryptedUrl = cipher.update(url, 'utf8', 'hex');
+    encryptedUrl += cipher.final('hex');
+    return encryptedUrl;
+  }
+
+  decryptUrl(encryptedUrl: string): string {
+    const decipher = crypto.createDecipheriv('aes-256-cbc', this.key, this.iv);
+    let decryptedUrl = decipher.update(encryptedUrl, 'hex', 'utf8');
+    decryptedUrl += decipher.final('utf8');
+    return decryptedUrl;
   }
 
   deleteMultipleObjects(keys: string[]) {

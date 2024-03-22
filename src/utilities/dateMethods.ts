@@ -87,3 +87,20 @@ export function dateValidation(start_date: Date, end_date: Date): Date[] {
     throw new BadRequestException('Invalid Date format recieved');
   return [from, to];
 }
+
+export function isValidTimestamp(timestampString) {
+  // Attempt to parse the string as a date
+  const timestamp = Date.parse(timestampString);
+
+  // Check if the parsed timestamp is a valid number
+  const isNumeric =
+    !isNaN(parseFloat(timestampString)) && isFinite(timestampString);
+
+  // If the parsed timestamp is a valid number or not a valid timestamp, return false
+  if (isNumeric || isNaN(timestamp)) {
+    return false;
+  }
+
+  // If the parsed timestamp is a valid number, return true
+  return true;
+}

@@ -4,6 +4,8 @@ import {
   Controller,
   Post,
   Get,
+  Param,
+  Res,
 } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ChargingSessionReportExporterService } from './charging-session-report-exporter.service';
@@ -12,11 +14,13 @@ import { ReportExporterResponse } from './dtos/reportApiResponse.dto';
 import { dateValidation } from 'src/utilities/dateMethods';
 import moment from 'moment';
 import { checkValidEmailList } from 'src/utilities/sharedMethods';
-
+import { AwsS3Service } from 'src/aws_service/aws_s3_service.service';
+import {Response} from 'express'
 @ApiTags('Charging Session Report Exporter')
 @Controller('charging-session-report-exporter')
 export class ChargingSessionReportExporterController {
-  constructor(private readonly service: ChargingSessionReportExporterService) {}
+  constructor(private readonly service: ChargingSessionReportExporterService,
+    private readonly awsS3 : AwsS3Service) {}
 
   //API route for download link
 
@@ -36,7 +40,7 @@ export class ChargingSessionReportExporterController {
   })
   @Post('/get-link')
   getReportLink(@Body() reqBody: ChargingSessionFieldsDto) {
-    const { from, to, filters, requestedFields } = reqBody;
+    const { from, to, filters, requestedFields, report_name } = reqBody;
     const [fromDate, toDate] = dateValidation(from, to);
     const maxDate = moment(fromDate).add(3, 'M');
     if (moment(fromDate).isAfter(maxDate)) {
@@ -49,12 +53,14 @@ export class ChargingSessionReportExporterController {
       toDate,
       filters,
       requestedFields,
+      report_name,
     );
   }
 
   @Post('/get-report-on-email')
   getReportViaEmail(@Body() reqBody: ChargingSessionFieldsDto) {
-    const { from, to, filters, emailList, requestedFields } = reqBody;
+    const { from, to, filters, emailList, requestedFields, report_name } =
+      reqBody;
     const [fromDate, toDate] = dateValidation(from, to);
     const maxDate = moment(fromDate).add(3, 'M');
     if (moment(fromDate).isAfter(maxDate)) {
@@ -71,6 +77,18 @@ export class ChargingSessionReportExporterController {
       emailList,
       filters,
       requestedFields,
+      report_name,
     );
+  }
+
+  @Get('/download-file/:encryptedUrl')
+  downloadFile(
+    @Param('encryptedUrl') encryptedUrl: string,
+    @Res() res: Response,
+  ) {
+    const preSignedUrl = this.awsS3.decryptUrl(encryptedUrl);
+    // Redirect user to pre-signed URL
+    console.log((preSignedUrl))
+    res.redirect(preSignedUrl)
   }
 }

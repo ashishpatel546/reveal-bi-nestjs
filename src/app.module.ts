@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -12,6 +12,9 @@ import { CsvWrapperModule } from './csvwrapper/csvwrapper.module';
 import { AwsServiceModule } from './aws_service/aws_service.module';
 import { DataExporterModule } from './data-exporter/charging-session-data-exporter.module';
 import { GraphDataModule } from './graph-data/graph-data.module';
+import { ThrottlerModule } from './throttler/throttler.module';
+import { ThrottlerMiddleware } from './middlewares/throtller-middleware';
+import { ChargingSessionReportExporterController } from './report-exporter/charging-session-report-exporter.controller';
 
 @Module({
   imports: [
@@ -43,8 +46,14 @@ import { GraphDataModule } from './graph-data/graph-data.module';
     AwsServiceModule,
     DataExporterModule,
     GraphDataModule,
+    ThrottlerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(ThrottlerMiddleware)
+    .forRoutes(ChargingSessionReportExporterController);
+  }
+}
