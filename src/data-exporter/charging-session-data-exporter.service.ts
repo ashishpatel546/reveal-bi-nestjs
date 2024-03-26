@@ -52,7 +52,7 @@ export class ChargingSessionDataExporterService {
     if (!isMatched)
       throw new BadRequestException({
         'Unmatched Fields': unmatchedFields,
-        Description:
+        description:
           'All requested fields are not exist in charging Session cube',
       });
 

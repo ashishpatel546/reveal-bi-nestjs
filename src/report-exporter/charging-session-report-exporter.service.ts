@@ -203,7 +203,7 @@ export class ChargingSessionReportExporterService {
       this.throttledService.deleteEntry(this.request.ip);
       throw new BadRequestException({
         'Unmatched Fields': unmatchedFields,
-        Description:
+        description:
           'All requested fields are not exist in charging Session cube',
       });
     }
@@ -217,7 +217,7 @@ export class ChargingSessionReportExporterService {
       this.throttledService.deleteEntry(this.request.ip);
       throw new BadRequestException({
         'Unmatched Fields': filterUnmatchedFields,
-        Description:
+        description:
           'All requested fields are not exist in charging Session cube',
       });
     }
