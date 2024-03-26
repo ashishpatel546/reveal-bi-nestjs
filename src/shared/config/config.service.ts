@@ -71,14 +71,6 @@ export class ApiConfigService {
     return this.getNumber('MAX_PAGE_SIZE');
   }
 
-  get getThrottleTTL(): number {
-    return this.getNumber('THROTTLE_TTL');
-  }
-
-  get getThrottleLimit(): number {
-    return this.getNumber('THROTTLE_LIMIT');
-  }
-
   get getFromEmail(): string {
     return this.getString('FROM_EMAIL_ID');
   }
@@ -87,5 +79,9 @@ export class ApiConfigService {
     return {
       port: this.getNumber('SERVICE_PORT'),
     };
+  }
+
+  get licence(): string {
+    return this.getString('LICENCE');
   }
 }

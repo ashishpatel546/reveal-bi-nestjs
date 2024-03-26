@@ -13,6 +13,7 @@ import fs from 'fs';
 import { Logger } from '@nestjs/common';
 import { DbConfig } from 'src/shared/config/dbConfig';
 import { ConfigService } from '@nestjs/config';
+import { ApiConfigService } from 'src/shared/config/config.service';
 
 export function RevealBiMiddleware(
   req: Request,
@@ -24,6 +25,8 @@ export function RevealBiMiddleware(
 
   const configService = new ConfigService();
   const dbConfig = new DbConfig(configService);
+
+  const config = new ApiConfigService(configService);
 
   const authenticationProvider = async (
     _userContext: IRVUserContext,
@@ -72,17 +75,17 @@ export function RevealBiMiddleware(
     return dataSourceItem;
   };
 
-  function getLicenceKey() {
-    try {
-      const filePath = join(process.cwd(), 'licence.key');
-      const licence = fs.readFileSync(filePath, 'utf-8');
-      return licence;
-    } catch (error) {
-      logger.error(error.message);
-      logger.error('unable to get licence key!!!');
-      return null;
-    }
-  }
+  // function getLicenceKey() {
+  //   try {
+  //     const filePath = join(process.cwd(), 'licence.key');
+  //     const licence = fs.readFileSync(filePath, 'utf-8');
+  //     return licence;
+  //   } catch (error) {
+  //     logger.error(error.message);
+  //     logger.error('unable to get licence key!!!');
+  //     return null;
+  //   }
+  // }
 
   function userContextProvider(req: Request) {
     logger.log('calling user context provider');
@@ -110,7 +113,8 @@ export function RevealBiMiddleware(
     authenticationProvider: authenticationProvider,
     dataSourceProvider: dataSourceProvider,
     dataSourceItemProvider: dataSourceItemProvider,
-    license: getLicenceKey(),
+    license: config.licence,
+    // license: getLicenceKey(),
     userContextProvider: () => userContextProvider(req),
   };
 
