@@ -6,10 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { Between, DataSource } from 'typeorm';
-import {
-  ChargingSessionRequestDto,
-  Filters,
-} from './dto/chargingSessionReq.dto';
+import { ChargingSessionRequestDto } from './dto/chargingSessionReq.dto';
 import moment from 'moment';
 import {
   checkArrayElementsMatch,
@@ -23,6 +20,7 @@ import {
 } from 'src/utilities/dateMethods';
 import { ResponseStatus, StatusOptions } from 'src/glolbal-interfaces/status';
 import { ChargingSessionDataResponse } from './interface/dataResponse.dto';
+import { Filter } from './dto/filter.dto';
 
 @Injectable()
 export class ChargingSessionDataExporterService {
@@ -32,10 +30,27 @@ export class ChargingSessionDataExporterService {
     private readonly apiConfig: ApiConfigService,
   ) {}
 
+  private buildQuerywithRequestedFields(
+    requestedFields: string[],
+    tableName: string,
+  ) {
+    let newQuery = 'SELECT ';
+    if (requestedFields && requestedFields.length > 0) {
+      // Extract field names from requestedFields and join them with commas
+      const fieldNames = requestedFields.map((field) => field).join(', ');
+      newQuery += fieldNames;
+    } else {
+      // If requestedFields array is empty or undefined, select all fields with *
+      newQuery += '*';
+    }
+    newQuery += ` from ${tableName}`;
+    return newQuery;
+  }
+
   private queryBuilder(
     from: Date,
     to: Date,
-    filters: Filters,
+    filters: Filter[],
     requestedFields: string[],
     page_number: number,
     page_size: number,
@@ -56,40 +71,70 @@ export class ChargingSessionDataExporterService {
           'All requested fields are not exist in charging Session cube',
       });
 
-    let query = 'SELECT ';
+    const filterKeys = filters.map((f) => f.fieldName.trim());
+    const {
+      isMatched: isFIlterKeysMatched,
+      unmatchedFields: filterUnmatchedFields,
+    } = checkArrayElementsMatch(filterKeys, classElements);
 
-    // Check if requestedFields array exists and has elements
-    if (requestedFields && requestedFields.length > 0) {
-      // Extract field names from requestedFields and join them with commas
-      const fieldNames = requestedFields.map((field) => field).join(', ');
-      query += fieldNames;
-    } else {
-      // If requestedFields array is empty or undefined, select all fields with *
-      query += '*';
+    if (!isFIlterKeysMatched) {
+      throw new BadRequestException({
+        'Unmatched Fields': filterUnmatchedFields,
+        description:
+          'All requested fields are not exist in charging Session cube',
+      });
     }
 
-    query = query + ` from charging_session `;
+    let query = this.buildQuerywithRequestedFields(
+      requestedFields,
+      'charging_session',
+    );
 
+    //add dates for which data required
     const fromString = moment(from).format('YYYY-MM-DD');
     const toString = moment(to).format('YYYY-MM-DD');
     const appendQuery = ` where Date(post_date) between '${fromString}' and '${toString}'`;
     query += appendQuery;
 
-    for (const key of Object.keys(filters)) {
-      // if (key === 'from' || key === 'to' || key === 'limit') {
-      //   continue;
-      // }
-
-      if (filters[key]?.length === 0) continue;
-
-      const keyString = idArrayToString(filters[key]);
-      const appendQuery = ` and ${key} in (${keyString})`;
-      query += appendQuery;
-    }
     const offset = (page_number - 1) * page_size;
     query = query + ` order by post_date offset ${offset} limit ${page_size}`;
     this.logger.log(`[GENERIC QUERY: ] ${query}`);
+
     return query;
+
+    // let query = 'SELECT ';
+
+    // Check if requestedFields array exists and has elements
+    // if (requestedFields && requestedFields.length > 0) {
+    //   // Extract field names from requestedFields and join them with commas
+    //   const fieldNames = requestedFields.map((field) => field).join(', ');
+    //   query += fieldNames;
+    // } else {
+    //   // If requestedFields array is empty or undefined, select all fields with *
+    //   query += '*';
+    // }
+
+    // query = query + ` from charging_session `;
+
+    // const fromString = moment(from).format('YYYY-MM-DD');
+    // const toString = moment(to).format('YYYY-MM-DD');
+    // const appendQuery = ` where Date(post_date) between '${fromString}' and '${toString}'`;
+    // query += appendQuery;
+
+    // for (const key of Object.keys(filters)) {
+    //   // if (key === 'from' || key === 'to' || key === 'limit') {
+    //   //   continue;
+    //   // }
+
+    //   if (filters[key]?.length === 0) continue;
+
+    //   const keyString = idArrayToString(filters[key]);
+    //   const appendQuery = ` and ${key} in (${keyString})`;
+    //   query += appendQuery;
+    // }
+    // const offset = (page_number - 1) * page_size;
+    // query = query + ` order by post_date offset ${offset} limit ${page_size}`;
+    // this.logger.log(`[GENERIC QUERY: ] ${query}`);
   }
 
   private async getTotalCountOfRecord(from: Date, to: Date) {

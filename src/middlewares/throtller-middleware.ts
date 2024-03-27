@@ -5,12 +5,14 @@ import {
   NestMiddleware,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { ThrottlerService } from 'src/throttler/throttler.service';
 
 @Injectable()
 export class ThrottlerMiddleware implements NestMiddleware {
+  private logger = new Logger(ThrottlerMiddleware.name)
   private readonly requestCounts: Map<
     string,
     { count: number; lastRequest: number }
@@ -27,6 +29,7 @@ export class ThrottlerMiddleware implements NestMiddleware {
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
+this.logger.debug(`Adding Ip to throtller: ${ip}`)
     this.throttled.addEntry(ip);
     next();
   }

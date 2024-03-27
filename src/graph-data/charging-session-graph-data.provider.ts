@@ -168,7 +168,6 @@ export class ChargingSessionGraphDataProiver {
     year,
     quarter;`;
     query += subQuery;
-    console.log(query);
     try {
       return this.redshift.query(query);
     } catch (error) {

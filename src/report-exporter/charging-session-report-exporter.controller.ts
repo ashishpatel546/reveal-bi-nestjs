@@ -88,7 +88,6 @@ export class ChargingSessionReportExporterController {
   ) {
     const preSignedUrl = this.awsS3.decryptUrl(encryptedUrl);
     // Redirect user to pre-signed URL
-    console.log((preSignedUrl))
     res.redirect(preSignedUrl)
   }
 }

@@ -49,7 +49,6 @@ export class GraphDataService {
         const field = record;
         let query = `select distinct(${field}) from ${table_name} `;
         query = this.addFiltersToQuery(query, filters);
-        console.log(query);
         const data = await this.redshift.query(query);
         result[field] = data.map((d) => d[field]);
       }
