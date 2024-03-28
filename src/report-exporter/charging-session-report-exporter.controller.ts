@@ -42,7 +42,7 @@ export class ChargingSessionReportExporterController {
   getReportLink(@Body() reqBody: ChargingSessionFieldsDto) {
     const { from, to, filters, requestedFields, report_name } = reqBody;
     const [fromDate, toDate] = dateValidation(from, to);
-    const maxDate = moment(fromDate).add(3, 'M');
+    const maxDate = moment(fromDate).add(4, 'M');
     if (moment(fromDate).isAfter(maxDate)) {
       throw new BadRequestException(
         'Can generate report for max of 3 months of duration.',
@@ -62,7 +62,7 @@ export class ChargingSessionReportExporterController {
     const { from, to, filters, emailList, requestedFields, report_name } =
       reqBody;
     const [fromDate, toDate] = dateValidation(from, to);
-    const maxDate = moment(fromDate).add(3, 'M');
+    const maxDate = moment(fromDate).add(4, 'M');
     if (moment(fromDate).isAfter(maxDate)) {
       throw new BadRequestException(
         'Can generate report for max of 3 months of duration.',

@@ -189,7 +189,7 @@ export class ChargingSessionReportExporterService {
   private queryBuilder(
     from: Date,
     to: Date,
-    filters: Filter[],
+    filters: Filter[] =[],
     requestedFields: string[],
   ) {
     const classElements = this.redshift
@@ -207,8 +207,7 @@ export class ChargingSessionReportExporterService {
           'All requested fields are not exist in charging Session cube',
       });
     }
-
-    const filterKeys = filters.map((f) => f.fieldName);
+    const filterKeys = filters?.map((f) => f.fieldName);
     const {
       isMatched: isFIlterKeysMatched,
       unmatchedFields: filterUnmatchedFields,
