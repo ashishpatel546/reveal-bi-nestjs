@@ -45,7 +45,7 @@ export class ChargingSessionReportExporterController {
     const maxDate = moment(fromDate).add(4, 'M');
     if (moment(fromDate).isAfter(maxDate)) {
       throw new BadRequestException(
-        'Can generate report for max of 3 months of duration.',
+        'From and To date can be in the range of 4 months',
       );
     }
     return this.service.getCsvReportLink(
@@ -65,7 +65,7 @@ export class ChargingSessionReportExporterController {
     const maxDate = moment(fromDate).add(4, 'M');
     if (moment(fromDate).isAfter(maxDate)) {
       throw new BadRequestException(
-        'Can generate report for max of 3 months of duration.',
+        'From and To date can be in the range of 4 months',
       );
     }
     const isValidEmailList = checkValidEmailList(emailList);
